@@ -1,4 +1,4 @@
-const API_URL = "https://testespoxx.contatoaline.com/api";
+const API_URL = "const API_URL = "https://pod-store-md9c.onrender.com/api";";
 
 async function request(endpoint, options = {}) {
   const res = await fetch(`${API_URL}/${endpoint}`, {
