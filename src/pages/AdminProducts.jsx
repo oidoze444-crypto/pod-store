@@ -3,8 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { productsApi, flavorsApi } from '../components/mysqlApi';
 import AdminLayout from '../components/admin/AdminLayout';
-import { Plus, Pencil, Trash2, Package, X, Star, EyeOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, X, Star, EyeOff, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+
+const API_URL = 'https://pod-store-md9c.onrender.com';
 
 const emptyProduct = {
   name: '',
@@ -22,6 +24,7 @@ const emptyProduct = {
 export default function AdminProducts() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['admin-products'],
@@ -61,6 +64,42 @@ export default function AdminProducts() {
       toast.error('Erro ao excluir produto');
     },
   });
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await fetch(`${API_URL}/api/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.url) {
+        throw new Error(data?.error || 'Erro no upload');
+      }
+
+      setEditing((prev) => ({
+        ...prev,
+        image_url: data.url,
+      }));
+
+      toast.success('Imagem enviada com sucesso!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao enviar imagem');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
 
   const toggleFlavor = (flavorId) => {
     setEditing(prev => {
@@ -117,13 +156,27 @@ export default function AdminProducts() {
                   </div>
                 )}
 
-                <input
-                  type="text"
-                  placeholder="Cole a URL da imagem"
-                  value={editing.image_url || ''}
-                  onChange={e => setEditing(p => ({ ...p, image_url: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+                <div className="flex gap-3">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors">
+                    <Upload className="w-4 h-4" />
+                    {uploading ? 'Enviando...' : 'Subir imagem'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                    />
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="ou cole a URL da imagem"
+                    value={editing.image_url || ''}
+                    onChange={e => setEditing(p => ({ ...p, image_url: e.target.value }))}
+                    className="flex-1 px-4 py-2.5 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
               </div>
 
               <div>
@@ -215,7 +268,7 @@ export default function AdminProducts() {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={editing.is_active}
+                    checked={!!editing.is_active}
                     onChange={e => setEditing(p => ({ ...p, is_active: e.target.checked }))}
                     className="w-4 h-4 rounded text-emerald-600"
                   />
@@ -225,7 +278,7 @@ export default function AdminProducts() {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={editing.is_featured}
+                    checked={!!editing.is_featured}
                     onChange={e => setEditing(p => ({ ...p, is_featured: e.target.checked }))}
                     className="w-4 h-4 rounded text-emerald-600"
                   />
@@ -275,12 +328,12 @@ export default function AdminProducts() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-sm truncate">{product.name}</h3>
-               {Number(product.is_featured) === 1 && (
-  <Star className="w-4 h-4 text-amber-500 fill-current flex-shrink-0" />
-)}
+                {Number(product.is_featured) === 1 && (
+                  <Star className="w-4 h-4 text-amber-500 fill-current flex-shrink-0" />
+                )}
                 {Number(product.is_active) === 0 && (
-  <EyeOff className="w-4 h-4 text-gray-400 flex-shrink-0" />
-)}
+                  <EyeOff className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                )}
               </div>
 
               <p className="text-xs text-gray-500">{product.category || 'Sem categoria'}</p>
@@ -292,9 +345,9 @@ export default function AdminProducts() {
 
                 <span
                   className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    product.stock <= 0
+                    Number(product.stock) <= 0
                       ? 'bg-red-100 text-red-700'
-                      : product.stock <= (product.low_stock_threshold || 5)
+                      : Number(product.stock) <= Number(product.low_stock_threshold || 5)
                       ? 'bg-amber-100 text-amber-700'
                       : 'bg-emerald-100 text-emerald-700'
                   }`}

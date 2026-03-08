@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { bannersApi } from '../components/mysqlApi';
 import AdminLayout from '../components/admin/AdminLayout';
-import { Plus, Pencil, Trash2, Image, X, Eye, EyeOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Image, X, Eye, EyeOff, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+
+const API_URL = 'https://pod-store-md9c.onrender.com';
 
 export default function AdminBanners() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const { data: banners = [], isLoading } = useQuery({
     queryKey: ['admin-banners'],
@@ -18,9 +21,10 @@ export default function AdminBanners() {
     mutationFn: async (data) => {
       const payload = {
         title: data.title || '',
+        subtitle: data.subtitle || '',
         image_url: data.image_url || '',
-        link: data.link || '',
         is_active: data.is_active ?? true,
+        order: Number(data.order || 0),
       };
 
       if (data.id) {
@@ -50,6 +54,42 @@ export default function AdminBanners() {
     },
   });
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await fetch(`${API_URL}/api/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.url) {
+        throw new Error(data?.error || 'Erro no upload');
+      }
+
+      setEditing((prev) => ({
+        ...prev,
+        image_url: data.url,
+      }));
+
+      toast.success('Imagem enviada com sucesso!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao enviar imagem');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
   return (
     <AdminLayout title="Banners">
       <div className="flex justify-between items-center mb-6">
@@ -59,9 +99,10 @@ export default function AdminBanners() {
           onClick={() =>
             setEditing({
               title: '',
+              subtitle: '',
               image_url: '',
-              link: '',
               is_active: true,
+              order: 0,
             })
           }
           className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-medium text-sm hover:bg-emerald-700 transition-colors"
@@ -104,15 +145,29 @@ export default function AdminBanners() {
                   </div>
                 )}
 
-                <input
-                  type="text"
-                  placeholder="Cole a URL da imagem"
-                  value={editing.image_url || ''}
-                  onChange={e =>
-                    setEditing((prev) => ({ ...prev, image_url: e.target.value }))
-                  }
-                  className="w-full px-4 py-2.5 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+                <div className="flex gap-3">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors">
+                    <Upload className="w-4 h-4" />
+                    {uploading ? 'Enviando...' : 'Subir imagem'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                    />
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="ou cole a URL da imagem"
+                    value={editing.image_url || ''}
+                    onChange={e =>
+                      setEditing((prev) => ({ ...prev, image_url: e.target.value }))
+                    }
+                    className="flex-1 px-4 py-2.5 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
               </div>
 
               <div>
@@ -132,15 +187,32 @@ export default function AdminBanners() {
 
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-1 block">
-                  Link do banner
+                  Subtítulo
                 </label>
 
                 <input
                   type="text"
-                  placeholder="https://..."
-                  value={editing.link || ''}
+                  value={editing.subtitle || ''}
                   onChange={e =>
-                    setEditing((prev) => ({ ...prev, link: e.target.value }))
+                    setEditing((prev) => ({ ...prev, subtitle: e.target.value }))
+                  }
+                  className="w-full px-4 py-2.5 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">
+                  Ordem
+                </label>
+
+                <input
+                  type="number"
+                  value={editing.order || 0}
+                  onChange={e =>
+                    setEditing((prev) => ({
+                      ...prev,
+                      order: parseInt(e.target.value) || 0,
+                    }))
                   }
                   className="w-full px-4 py-2.5 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
@@ -201,15 +273,15 @@ export default function AdminBanners() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-sm truncate">{banner.title}</h3>
-                  {banner.is_active ? (
+                  {Number(banner.is_active) === 1 ? (
                     <Eye className="w-4 h-4 text-emerald-500" />
                   ) : (
                     <EyeOff className="w-4 h-4 text-gray-400" />
                   )}
                 </div>
 
-                {banner.link && (
-                  <p className="text-xs text-gray-500 truncate">{banner.link}</p>
+                {banner.subtitle && (
+                  <p className="text-xs text-gray-500 truncate">{banner.subtitle}</p>
                 )}
               </div>
 

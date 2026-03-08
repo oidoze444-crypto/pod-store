@@ -88,6 +88,40 @@ function query(sql, params = []) {
   });
 }
 
+function normalizeFlavorIds(flavorIds) {
+  if (!flavorIds) return JSON.stringify([]);
+
+  if (Array.isArray(flavorIds)) {
+    return JSON.stringify(flavorIds.map(Number).filter(Boolean));
+  }
+
+  if (typeof flavorIds === "string") {
+    try {
+      const parsed = JSON.parse(flavorIds);
+
+      if (Array.isArray(parsed)) {
+        return JSON.stringify(parsed.map(Number).filter(Boolean));
+      }
+
+      if (typeof parsed === "string") {
+        const parsedAgain = JSON.parse(parsed);
+        if (Array.isArray(parsedAgain)) {
+          return JSON.stringify(parsedAgain.map(Number).filter(Boolean));
+        }
+      }
+    } catch (e) {
+      const splitIds = flavorIds
+        .split(",")
+        .map((id) => Number(String(id).trim()))
+        .filter(Boolean);
+
+      return JSON.stringify(splitIds);
+    }
+  }
+
+  return JSON.stringify([]);
+}
+
 app.get("/", (req, res) => {
   res.send("API online");
 });
@@ -145,7 +179,7 @@ app.post("/api/products", async (req, res) => {
         is_active ?? 1,
         is_featured ?? 0,
         low_stock_threshold ?? 5,
-        JSON.stringify(flavor_ids || []),
+        normalizeFlavorIds(flavor_ids),
       ]
     );
 
@@ -186,7 +220,7 @@ app.put("/api/products/:id", async (req, res) => {
         is_active ?? 1,
         is_featured ?? 0,
         low_stock_threshold ?? 5,
-        JSON.stringify(flavor_ids || []),
+        normalizeFlavorIds(flavor_ids),
         req.params.id,
       ]
     );
