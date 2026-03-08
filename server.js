@@ -162,15 +162,20 @@ app.get("/api/flavors", async (req, res) => {
 
 app.post("/api/flavors", async (req, res) => {
   try {
-    const { name, product_id, is_active } = req.body;
+
+    const { name, is_active } = req.body;
 
     const result = await query(
-      `INSERT INTO flavors (name, product_id, is_active)
-       VALUES (?, ?, ?)`,
-      [name || "", product_id || null, is_active ?? 1]
+      `INSERT INTO flavors (name, is_active)
+       VALUES (?, ?)`,
+      [
+        name || "",
+        is_active ?? 1
+      ]
     );
 
     res.json({ success: true, id: result.insertId });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao criar sabor" });
@@ -179,14 +184,22 @@ app.post("/api/flavors", async (req, res) => {
 
 app.put("/api/flavors/:id", async (req, res) => {
   try {
-    const { name, product_id, is_active } = req.body;
+
+    const { name, is_active } = req.body;
 
     await query(
-      `UPDATE flavors SET name = ?, product_id = ?, is_active = ? WHERE id = ?`,
-      [name || "", product_id || null, is_active ?? 1, req.params.id]
+      `UPDATE flavors
+       SET name = ?, is_active = ?
+       WHERE id = ?`,
+      [
+        name || "",
+        is_active ?? 1,
+        req.params.id
+      ]
     );
 
     res.json({ success: true });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao atualizar sabor" });
@@ -195,8 +208,14 @@ app.put("/api/flavors/:id", async (req, res) => {
 
 app.delete("/api/flavors/:id", async (req, res) => {
   try {
-    await query("DELETE FROM flavors WHERE id = ?", [req.params.id]);
+
+    await query(
+      "DELETE FROM flavors WHERE id = ?",
+      [req.params.id]
+    );
+
     res.json({ success: true });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao excluir sabor" });
@@ -209,7 +228,7 @@ app.delete("/api/flavors/:id", async (req, res) => {
 
 app.get("/api/banners", async (req, res) => {
   try {
-    const results = await query("SELECT * FROM banners ORDER BY id DESC");
+    const results = await query("SELECT * FROM banners ORDER BY `order` ASC, id DESC");
     res.json(results);
   } catch (err) {
     console.error(err);
@@ -219,12 +238,18 @@ app.get("/api/banners", async (req, res) => {
 
 app.post("/api/banners", async (req, res) => {
   try {
-    const { title, image_url, link, is_active } = req.body;
+    const { title, subtitle, image_url, is_active, order } = req.body;
 
     const result = await query(
-      `INSERT INTO banners (title, image_url, link, is_active)
-       VALUES (?, ?, ?, ?)`,
-      [title || "", image_url || "", link || "", is_active ?? 1]
+      `INSERT INTO banners (title, subtitle, image_url, is_active, \`order\`)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        title || "",
+        subtitle || "",
+        image_url || "",
+        is_active ?? 1,
+        order ?? 0
+      ]
     );
 
     res.json({ success: true, id: result.insertId });
@@ -236,13 +261,20 @@ app.post("/api/banners", async (req, res) => {
 
 app.put("/api/banners/:id", async (req, res) => {
   try {
-    const { title, image_url, link, is_active } = req.body;
+    const { title, subtitle, image_url, is_active, order } = req.body;
 
     await query(
       `UPDATE banners
-       SET title = ?, image_url = ?, link = ?, is_active = ?
+       SET title = ?, subtitle = ?, image_url = ?, is_active = ?, \`order\` = ?
        WHERE id = ?`,
-      [title || "", image_url || "", link || "", is_active ?? 1, req.params.id]
+      [
+        title || "",
+        subtitle || "",
+        image_url || "",
+        is_active ?? 1,
+        order ?? 0,
+        req.params.id
+      ]
     );
 
     res.json({ success: true });
@@ -268,40 +300,70 @@ app.delete("/api/banners/:id", async (req, res) => {
 
 app.get("/api/orders", async (req, res) => {
   try {
-    const results = await query("SELECT * FROM orders ORDER BY id DESC");
+
+    const results = await query(
+      "SELECT * FROM orders ORDER BY created_at DESC"
+    );
+
     res.json(results);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao buscar pedidos" });
   }
 });
 
+app.get("/api/orders/:id", async (req, res) => {
+  try {
+
+    const results = await query(
+      "SELECT * FROM orders WHERE id = ?",
+      [req.params.id]
+    );
+
+    res.json(results[0]);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao buscar pedido" });
+  }
+});
+
 app.post("/api/orders", async (req, res) => {
   try {
+
     const {
       customer_name,
       customer_phone,
       address,
-      total,
       items,
+      subtotal,
+      delivery_fee,
+      total,
       status
     } = req.body;
 
     const result = await query(
       `INSERT INTO orders
-      (customer_name, customer_phone, address, total, items, status)
-      VALUES (?, ?, ?, ?, ?, ?)`,
+      (customer_name, customer_phone, address, items, subtotal, delivery_fee, total, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         customer_name || "",
         customer_phone || "",
-        address || "",
-        total || 0,
+        JSON.stringify(address || {}),
         JSON.stringify(items || []),
-        status || "novo"
+        subtotal || 0,
+        delivery_fee || 0,
+        total || 0,
+        status || "pending"
       ]
     );
 
-    res.json({ success: true, id: result.insertId });
+    res.json({
+      success: true,
+      id: result.insertId
+    });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao criar pedido" });
@@ -310,14 +372,18 @@ app.post("/api/orders", async (req, res) => {
 
 app.put("/api/orders/:id", async (req, res) => {
   try {
+
     const { status } = req.body;
 
     await query(
-      `UPDATE orders SET status = ? WHERE id = ?`,
-      [status || "novo", req.params.id]
+      `UPDATE orders
+       SET status = ?
+       WHERE id = ?`,
+      [status, req.params.id]
     );
 
     res.json({ success: true });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao atualizar pedido" });
@@ -326,8 +392,14 @@ app.put("/api/orders/:id", async (req, res) => {
 
 app.delete("/api/orders/:id", async (req, res) => {
   try {
-    await query("DELETE FROM orders WHERE id = ?", [req.params.id]);
+
+    await query(
+      "DELETE FROM orders WHERE id = ?",
+      [req.params.id]
+    );
+
     res.json({ success: true });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao excluir pedido" });
