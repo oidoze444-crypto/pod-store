@@ -133,13 +133,15 @@ function CheckoutContent() {
     }));
 
     const orderData = {
-      customer_name: form.name,
-      customer_phone: '',
-      address: addressText,
-      total,
-      items: orderItems,
-      status: 'novo',
-    };
+  customer_name: form.name,
+  customer_phone: '',
+  address: addressText,
+  items: orderItems,
+  subtotal,
+  delivery_fee: deliveryFee,
+  total,
+  status: 'pending',
+};
 
     try {
       await ordersApi.create(orderData);

@@ -72,13 +72,15 @@ app.post("/api/products", async (req, res) => {
       stock,
       image_url,
       is_active,
-      is_featured
+      is_featured,
+      low_stock_threshold,
+      flavor_ids
     } = req.body;
 
     const result = await query(
       `INSERT INTO products
-      (name, description, price, category, stock, image_url, is_active, is_featured)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      (name, description, price, category, stock, image_url, is_active, is_featured, low_stock_threshold, flavor_ids)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         name || "",
         description || "",
@@ -87,7 +89,9 @@ app.post("/api/products", async (req, res) => {
         stock || 0,
         image_url || "",
         is_active ?? 1,
-        is_featured ?? 0
+        is_featured ?? 0,
+        low_stock_threshold ?? 5,
+        JSON.stringify(flavor_ids || [])
       ]
     );
 
@@ -108,13 +112,15 @@ app.put("/api/products/:id", async (req, res) => {
       stock,
       image_url,
       is_active,
-      is_featured
+      is_featured,
+      low_stock_threshold,
+      flavor_ids
     } = req.body;
 
     await query(
       `UPDATE products SET
       name = ?, description = ?, price = ?, category = ?, stock = ?,
-      image_url = ?, is_active = ?, is_featured = ?
+      image_url = ?, is_active = ?, is_featured = ?, low_stock_threshold = ?, flavor_ids = ?
       WHERE id = ?`,
       [
         name || "",
@@ -125,6 +131,8 @@ app.put("/api/products/:id", async (req, res) => {
         image_url || "",
         is_active ?? 1,
         is_featured ?? 0,
+        low_stock_threshold ?? 5,
+        JSON.stringify(flavor_ids || []),
         req.params.id
       ]
     );
