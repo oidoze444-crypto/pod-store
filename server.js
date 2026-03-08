@@ -1,11 +1,65 @@
 import express from "express";
 import cors from "cors";
 import mysql from "mysql2";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
+
+/* =========================
+   UPLOADS
+========================= */
+
+const uploadDir = path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, unique + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
+
+app.use("/uploads", express.static(uploadDir));
+
+app.post("/api/upload", upload.single("image"), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Nenhum arquivo enviado" });
+    }
+
+    const url = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+
+    res.json({
+      success: true,
+      url,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao fazer upload" });
+  }
+});
+
+/* =========================
+   MYSQL
+========================= */
 
 const db = mysql.createPool({
   host: "srv1664.hstgr.io",
@@ -13,7 +67,7 @@ const db = mysql.createPool({
   password: "@Isantos2012",
   database: "u584951003_NOVOREDIRECT",
   port: 3306,
-  connectionLimit: 10
+  connectionLimit: 10,
 });
 
 db.getConnection((err, connection) => {
@@ -74,7 +128,7 @@ app.post("/api/products", async (req, res) => {
       is_active,
       is_featured,
       low_stock_threshold,
-      flavor_ids
+      flavor_ids,
     } = req.body;
 
     const result = await query(
@@ -91,7 +145,7 @@ app.post("/api/products", async (req, res) => {
         is_active ?? 1,
         is_featured ?? 0,
         low_stock_threshold ?? 5,
-        JSON.stringify(flavor_ids || [])
+        JSON.stringify(flavor_ids || []),
       ]
     );
 
@@ -114,7 +168,7 @@ app.put("/api/products/:id", async (req, res) => {
       is_active,
       is_featured,
       low_stock_threshold,
-      flavor_ids
+      flavor_ids,
     } = req.body;
 
     await query(
@@ -133,7 +187,7 @@ app.put("/api/products/:id", async (req, res) => {
         is_featured ?? 0,
         low_stock_threshold ?? 5,
         JSON.stringify(flavor_ids || []),
-        req.params.id
+        req.params.id,
       ]
     );
 
@@ -170,20 +224,15 @@ app.get("/api/flavors", async (req, res) => {
 
 app.post("/api/flavors", async (req, res) => {
   try {
-
     const { name, is_active } = req.body;
 
     const result = await query(
       `INSERT INTO flavors (name, is_active)
        VALUES (?, ?)`,
-      [
-        name || "",
-        is_active ?? 1
-      ]
+      [name || "", is_active ?? 1]
     );
 
     res.json({ success: true, id: result.insertId });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao criar sabor" });
@@ -192,22 +241,16 @@ app.post("/api/flavors", async (req, res) => {
 
 app.put("/api/flavors/:id", async (req, res) => {
   try {
-
     const { name, is_active } = req.body;
 
     await query(
       `UPDATE flavors
        SET name = ?, is_active = ?
        WHERE id = ?`,
-      [
-        name || "",
-        is_active ?? 1,
-        req.params.id
-      ]
+      [name || "", is_active ?? 1, req.params.id]
     );
 
     res.json({ success: true });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao atualizar sabor" });
@@ -216,14 +259,8 @@ app.put("/api/flavors/:id", async (req, res) => {
 
 app.delete("/api/flavors/:id", async (req, res) => {
   try {
-
-    await query(
-      "DELETE FROM flavors WHERE id = ?",
-      [req.params.id]
-    );
-
+    await query("DELETE FROM flavors WHERE id = ?", [req.params.id]);
     res.json({ success: true });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao excluir sabor" });
@@ -251,13 +288,7 @@ app.post("/api/banners", async (req, res) => {
     const result = await query(
       `INSERT INTO banners (title, subtitle, image_url, is_active, \`order\`)
        VALUES (?, ?, ?, ?, ?)`,
-      [
-        title || "",
-        subtitle || "",
-        image_url || "",
-        is_active ?? 1,
-        order ?? 0
-      ]
+      [title || "", subtitle || "", image_url || "", is_active ?? 1, order ?? 0]
     );
 
     res.json({ success: true, id: result.insertId });
@@ -275,14 +306,7 @@ app.put("/api/banners/:id", async (req, res) => {
       `UPDATE banners
        SET title = ?, subtitle = ?, image_url = ?, is_active = ?, \`order\` = ?
        WHERE id = ?`,
-      [
-        title || "",
-        subtitle || "",
-        image_url || "",
-        is_active ?? 1,
-        order ?? 0,
-        req.params.id
-      ]
+      [title || "", subtitle || "", image_url || "", is_active ?? 1, order ?? 0, req.params.id]
     );
 
     res.json({ success: true });
@@ -308,13 +332,8 @@ app.delete("/api/banners/:id", async (req, res) => {
 
 app.get("/api/orders", async (req, res) => {
   try {
-
-    const results = await query(
-      "SELECT * FROM orders ORDER BY created_at DESC"
-    );
-
+    const results = await query("SELECT * FROM orders ORDER BY created_at DESC");
     res.json(results);
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao buscar pedidos" });
@@ -323,14 +342,8 @@ app.get("/api/orders", async (req, res) => {
 
 app.get("/api/orders/:id", async (req, res) => {
   try {
-
-    const results = await query(
-      "SELECT * FROM orders WHERE id = ?",
-      [req.params.id]
-    );
-
+    const results = await query("SELECT * FROM orders WHERE id = ?", [req.params.id]);
     res.json(results[0]);
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao buscar pedido" });
@@ -339,7 +352,6 @@ app.get("/api/orders/:id", async (req, res) => {
 
 app.post("/api/orders", async (req, res) => {
   try {
-
     const {
       customer_name,
       customer_phone,
@@ -348,7 +360,7 @@ app.post("/api/orders", async (req, res) => {
       subtotal,
       delivery_fee,
       total,
-      status
+      status,
     } = req.body;
 
     const result = await query(
@@ -363,15 +375,14 @@ app.post("/api/orders", async (req, res) => {
         subtotal || 0,
         delivery_fee || 0,
         total || 0,
-        status || "pending"
+        status || "pending",
       ]
     );
 
     res.json({
       success: true,
-      id: result.insertId
+      id: result.insertId,
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao criar pedido" });
@@ -380,7 +391,6 @@ app.post("/api/orders", async (req, res) => {
 
 app.put("/api/orders/:id", async (req, res) => {
   try {
-
     const { status } = req.body;
 
     await query(
@@ -391,7 +401,6 @@ app.put("/api/orders/:id", async (req, res) => {
     );
 
     res.json({ success: true });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao atualizar pedido" });
@@ -400,14 +409,8 @@ app.put("/api/orders/:id", async (req, res) => {
 
 app.delete("/api/orders/:id", async (req, res) => {
   try {
-
-    await query(
-      "DELETE FROM orders WHERE id = ?",
-      [req.params.id]
-    );
-
+    await query("DELETE FROM orders WHERE id = ?", [req.params.id]);
     res.json({ success: true });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao excluir pedido" });
@@ -449,7 +452,7 @@ app.post("/api/settings", async (req, res) => {
           data.opening_time || null,
           data.closing_time || null,
           data.is_open_override ?? null,
-          id
+          id,
         ]
       );
     } else {
@@ -463,7 +466,7 @@ app.post("/api/settings", async (req, res) => {
           data.background_color || "#ffffff",
           data.opening_time || null,
           data.closing_time || null,
-          data.is_open_override ?? null
+          data.is_open_override ?? null,
         ]
       );
     }
@@ -475,6 +478,6 @@ app.post("/api/settings", async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
-  console.log("🚀 API rodando em http://localhost:3000");
+app.listen(PORT, () => {
+  console.log(`🚀 API rodando na porta ${PORT}`);
 });

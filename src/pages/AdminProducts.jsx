@@ -275,12 +275,12 @@ export default function AdminProducts() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-sm truncate">{product.name}</h3>
-                {product.is_featured && (
-                  <Star className="w-4 h-4 text-amber-500 fill-current flex-shrink-0" />
-                )}
-                {product.is_active === false && (
-                  <EyeOff className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                )}
+               {Number(product.is_featured) === 1 && (
+  <Star className="w-4 h-4 text-amber-500 fill-current flex-shrink-0" />
+)}
+                {Number(product.is_active) === 0 && (
+  <EyeOff className="w-4 h-4 text-gray-400 flex-shrink-0" />
+)}
               </div>
 
               <p className="text-xs text-gray-500">{product.category || 'Sem categoria'}</p>
