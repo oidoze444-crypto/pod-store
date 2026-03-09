@@ -505,7 +505,6 @@ app.post("/api/settings", async (req, res) => {
 
     if (existing.length > 0) {
       const id = existing[0].id;
-
       const setClause = fields.map(f => `${f} = ?`).join(", ");
 
       await query(
@@ -523,9 +522,12 @@ app.post("/api/settings", async (req, res) => {
     }
 
     res.json({ success: true });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao salvar configurações" });
   }
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 API rodando na porta ${PORT}`);
 });
