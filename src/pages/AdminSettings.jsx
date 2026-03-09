@@ -112,6 +112,27 @@ const colorFields = [
   ['free_shipping_bar_fill_color', 'Barra frete progresso'],
 ];
 
+function Toggle({ checked, onChange, label }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-medium text-gray-700">{label}</span>
+      <button
+        type="button"
+        onClick={onChange}
+        className={`w-14 h-8 flex items-center rounded-full transition-all ${
+          checked ? 'bg-emerald-500' : 'bg-gray-300'
+        }`}
+      >
+        <div
+          className={`bg-white w-6 h-6 rounded-full shadow transform transition-all ${
+            checked ? 'translate-x-7' : 'translate-x-1'
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
 export default function AdminSettings() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState(null);
@@ -132,9 +153,7 @@ export default function AdminSettings() {
   }, [settingsData, isLoading, hasInitialized]);
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
-      return settingsApi.save(form);
-    },
+    mutationFn: async () => settingsApi.save(form),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
       await queryClient.invalidateQueries({ queryKey: ['settings'] });
@@ -303,17 +322,16 @@ export default function AdminSettings() {
         </Section>
 
         <Section title="Frete Grátis" icon={Truck}>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={Number(form.free_shipping_enabled) === 1}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, free_shipping_enabled: e.target.checked ? 1 : 0 }))
-              }
-              className="w-4 h-4 rounded text-emerald-600"
-            />
-            <span className="text-sm font-medium">Ativar barra de frete grátis</span>
-          </label>
+          <Toggle
+            label="Frete grátis"
+            checked={Number(form.free_shipping_enabled) === 1}
+            onChange={() =>
+              setForm((p) => ({
+                ...p,
+                free_shipping_enabled: Number(p.free_shipping_enabled) === 1 ? 0 : 1,
+              }))
+            }
+          />
 
           <Field label="Valor para frete grátis (R$)">
             <input
@@ -363,17 +381,16 @@ export default function AdminSettings() {
         </Section>
 
         <Section title="Avaliações Fake" icon={Star}>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={Number(form.show_fake_reviews) === 1}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, show_fake_reviews: e.target.checked ? 1 : 0 }))
-              }
-              className="w-4 h-4 rounded text-emerald-600"
-            />
-            <span className="text-sm font-medium">Mostrar avaliações nos produtos</span>
-          </label>
+          <Toggle
+            label="Mostrar avaliações nos produtos"
+            checked={Number(form.show_fake_reviews) === 1}
+            onChange={() =>
+              setForm((p) => ({
+                ...p,
+                show_fake_reviews: Number(p.show_fake_reviews) === 1 ? 0 : 1,
+              }))
+            }
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <Field label="Nota">
@@ -424,17 +441,16 @@ export default function AdminSettings() {
             </Field>
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={Number(form.is_open_override) === 1}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, is_open_override: e.target.checked ? 1 : 0 }))
-              }
-              className="w-4 h-4 rounded text-emerald-600"
-            />
-            <span className="text-sm font-medium">Forçar loja aberta</span>
-          </label>
+          <Toggle
+            label="Forçar loja aberta"
+            checked={Number(form.is_open_override) === 1}
+            onChange={() =>
+              setForm((p) => ({
+                ...p,
+                is_open_override: Number(p.is_open_override) === 1 ? 0 : 1,
+              }))
+            }
+          />
 
           <Field label="Mensagem de loja fechada">
             <input

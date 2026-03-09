@@ -468,73 +468,71 @@ app.get("/api/settings", async (req, res) => {
 app.post("/api/settings", async (req, res) => {
   try {
     const data = req.body;
-
     const existing = await query("SELECT id FROM site_settings LIMIT 1");
-   const fields = [
-  "store_name",
-  "whatsapp_number",
-  "logo_url",
-  "header_text",
 
-  "primary_color",
-  "button_color",
-  "background_color",
-  "header_color",
-  "cart_color",
+    const fields = [
+      "store_name",
+      "whatsapp_number",
+      "logo_url",
+      "header_text",
 
-  "delivery_fee",
-  "min_order_value",
+      "primary_color",
+      "button_color",
+      "background_color",
 
-  "free_shipping_enabled",
-  "free_shipping_threshold",
-  "free_shipping_text",
-  "free_shipping_remaining_text",
-  "free_shipping_success_text",
+      "delivery_fee",
+      "min_order_value",
 
-  "show_fake_reviews",
-  "fake_rating",
-  "fake_reviews_count",
+      "free_shipping_enabled",
+      "free_shipping_threshold",
+      "free_shipping_text",
+      "free_shipping_remaining_text",
+      "free_shipping_success_text",
 
-  "opening_time",
-  "closing_time",
-  "is_open_override",
-  "closed_message",
+      "show_fake_reviews",
+      "fake_rating",
+      "fake_reviews_count",
 
-  "header_background_color",
-  "header_text_color",
-  "header_border_color",
-  "search_background_color",
-  "search_text_color",
-  "cart_button_background_color",
-  "cart_button_icon_color",
-  "cart_badge_background_color",
-  "cart_badge_text_color",
-  "cart_drawer_background_color",
-  "cart_item_background_color",
-  "cart_total_background_color",
-  "product_card_background_color",
-  "product_name_color",
-  "product_description_color",
-  "product_price_color",
-  "product_button_background_color",
-  "product_button_text_color",
-  "badge_featured_background_color",
-  "badge_featured_text_color",
-  "badge_low_stock_background_color",
-  "badge_low_stock_text_color",
-  "badge_sold_out_background_color",
-  "badge_sold_out_text_color",
-  "free_shipping_bar_background_color",
-  "free_shipping_bar_fill_color",
-  "free_shipping_box_background_color",
-  "free_shipping_text_color",
-];
+      "opening_time",
+      "closing_time",
+      "is_open_override",
+      "closed_message",
 
-    const values = fields.map(f => data[f] ?? null);
+      "header_background_color",
+      "header_text_color",
+      "header_border_color",
+      "search_background_color",
+      "search_text_color",
+      "cart_button_background_color",
+      "cart_button_icon_color",
+      "cart_badge_background_color",
+      "cart_badge_text_color",
+      "cart_drawer_background_color",
+      "cart_item_background_color",
+      "cart_total_background_color",
+      "product_card_background_color",
+      "product_name_color",
+      "product_description_color",
+      "product_price_color",
+      "product_button_background_color",
+      "product_button_text_color",
+      "badge_featured_background_color",
+      "badge_featured_text_color",
+      "badge_low_stock_background_color",
+      "badge_low_stock_text_color",
+      "badge_sold_out_background_color",
+      "badge_sold_out_text_color",
+      "free_shipping_bar_background_color",
+      "free_shipping_bar_fill_color",
+      "free_shipping_box_background_color",
+      "free_shipping_text_color",
+    ];
+
+    const values = fields.map((f) => data[f] ?? null);
 
     if (existing.length > 0) {
       const id = existing[0].id;
-      const setClause = fields.map(f => `${f} = ?`).join(", ");
+      const setClause = fields.map((f) => `${f} = ?`).join(", ");
 
       await query(
         `UPDATE site_settings SET ${setClause} WHERE id = ?`,
@@ -545,15 +543,19 @@ app.post("/api/settings", async (req, res) => {
 
       await query(
         `INSERT INTO site_settings (${fields.join(",")})
-        VALUES (${placeholders})`,
+         VALUES (${placeholders})`,
         values
       );
     }
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao salvar configurações" });
+    console.error("ERRO AO SALVAR CONFIGURAÇÕES:", err);
+    res.status(500).json({
+      error: err.message,
+      sqlMessage: err.sqlMessage || null,
+      code: err.code || null,
+    });
   }
 });
 
