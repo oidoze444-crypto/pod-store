@@ -8,8 +8,7 @@ import { toast } from 'sonner';
 const API_URL = 'https://pod-store-md9c.onrender.com';
 
 const buildInitialForm = (settingsData = {}) => ({
-  ...settingsData,
-
+  id: settingsData.id,
   store_name: settingsData.store_name || 'POD Store',
   whatsapp_number: settingsData.whatsapp_number || '',
   header_text: settingsData.header_text || 'Os melhores PODs com entrega rápida!',
@@ -23,7 +22,7 @@ const buildInitialForm = (settingsData = {}) => ({
   is_open_override: Number(settingsData.is_open_override ?? 1),
   closed_message: settingsData.closed_message || 'Estamos fechados no momento. Volte em breve!',
 
-  free_shipping_enabled: Number(settingsData.free_shipping_enabled ?? 1),
+  free_shipping_enabled: Number(settingsData.free_shipping_enabled ?? 0),
   free_shipping_threshold: Number(settingsData.free_shipping_threshold ?? 400),
   free_shipping_text:
     settingsData.free_shipping_text || '🚚 Frete grátis para pedidos acima de R$ {valor}',
@@ -117,7 +116,7 @@ export default function AdminSettings() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [formReady, setFormReady] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   const { data: settingsData, isLoading } = useQuery({
     queryKey: ['admin-settings'],
@@ -125,29 +124,24 @@ export default function AdminSettings() {
   });
 
   useEffect(() => {
-    if (formReady) return;
+    if (isLoading) return;
+    if (hasInitialized) return;
 
-    if (settingsData) {
-      setForm(buildInitialForm(settingsData));
-      setFormReady(true);
-    } else if (!isLoading) {
-      setForm(buildInitialForm());
-      setFormReady(true);
-    }
-  }, [settingsData, isLoading, formReady]);
+    setForm(buildInitialForm(settingsData || {}));
+    setHasInitialized(true);
+  }, [settingsData, isLoading, hasInitialized]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const { id, created_at, updated_at, ...data } = form;
-      return settingsApi.save(data);
+      return settingsApi.save(form);
     },
     onSuccess: async () => {
-      setFormReady(false);
       await queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
       await queryClient.invalidateQueries({ queryKey: ['settings'] });
       toast.success('Configurações salvas!');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error(error);
       toast.error('Erro ao salvar configurações');
     },
   });

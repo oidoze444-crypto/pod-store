@@ -13,7 +13,9 @@ export default function CartDrawer({ open, onClose, settings }) {
   const freeShippingThreshold = parseFloat(settings?.free_shipping_threshold || 0);
 
   const qualifiesFreeShipping =
-    freeShippingEnabled && freeShippingThreshold > 0 && Number(subtotal) >= freeShippingThreshold;
+    freeShippingEnabled &&
+    freeShippingThreshold > 0 &&
+    Number(subtotal || 0) >= freeShippingThreshold;
 
   const deliveryFee = qualifiesFreeShipping ? 0 : rawDeliveryFee;
   const total = parseFloat(subtotal || 0) + deliveryFee;
@@ -29,8 +31,15 @@ export default function CartDrawer({ open, onClose, settings }) {
     navigate(createPageUrl('Checkout'));
   };
 
+  const freeShippingTitle = qualifiesFreeShipping
+    ? settings?.free_shipping_success_text || 'Parabéns! Você ganhou frete grátis'
+    : (settings?.free_shipping_text || '🚚 Frete grátis para pedidos acima de R$ {valor}').replace(
+        '{valor}',
+        freeShippingThreshold.toFixed(2).replace('.', ',')
+      );
+
   const freeShippingMessage = qualifiesFreeShipping
-    ? (settings?.free_shipping_success_text || 'Parabéns! Você ganhou frete grátis')
+    ? settings?.free_shipping_success_text || 'Parabéns! Você ganhou frete grátis'
     : (settings?.free_shipping_remaining_text || 'Faltam R$ {valor} para frete grátis').replace(
         '{valor}',
         remaining.toFixed(2).replace('.', ',')
@@ -38,7 +47,12 @@ export default function CartDrawer({ open, onClose, settings }) {
 
   return (
     <>
-      {open && <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" onClick={onClose} />}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+          onClick={onClose}
+        />
+      )}
 
       <div
         className={`fixed top-0 right-0 h-full w-full sm:max-w-md shadow-2xl z-50 transform transition-transform duration-300 flex flex-col ${
@@ -48,11 +62,17 @@ export default function CartDrawer({ open, onClose, settings }) {
       >
         <div className="flex items-center justify-between p-5 border-b">
           <div className="flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5" style={{ color: settings?.primary_color || '#059669' }} />
+            <ShoppingBag
+              className="w-5 h-5"
+              style={{ color: settings?.primary_color || '#059669' }}
+            />
             <h2 className="text-lg font-bold text-gray-900">Carrinho ({totalItems})</h2>
           </div>
 
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -74,14 +94,7 @@ export default function CartDrawer({ open, onClose, settings }) {
                     color: settings?.free_shipping_text_color || '#065f46',
                   }}
                 >
-                  <p className="text-sm font-semibold mb-2">
-                    {qualifiesFreeShipping
-                      ? settings?.free_shipping_success_text || 'Parabéns! Você ganhou frete grátis'
-                      : settings?.free_shipping_text || '🚚 Frete grátis para pedidos acima de R$ {valor}'.replace(
-                          '{valor}',
-                          freeShippingThreshold.toFixed(2).replace('.', ',')
-                        )}
-                  </p>
+                  <p className="text-sm font-semibold mb-2">{freeShippingTitle}</p>
 
                   <p className="text-xs mb-2">{freeShippingMessage}</p>
 
@@ -125,7 +138,9 @@ export default function CartDrawer({ open, onClose, settings }) {
                   )}
 
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm text-gray-900 truncate">{item.product_name}</h4>
+                    <h4 className="font-semibold text-sm text-gray-900 truncate">
+                      {item.product_name}
+                    </h4>
                     <p className="text-xs text-gray-500">Sabor: {item.flavor}</p>
                     <p
                       className="text-sm font-bold mt-1"
@@ -178,7 +193,9 @@ export default function CartDrawer({ open, onClose, settings }) {
             <div className="flex justify-between text-sm text-gray-600">
               <span>Taxa de entrega</span>
               <span>
-                {deliveryFee === 0 && rawDeliveryFee > 0 ? 'Grátis' : `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`}
+                {deliveryFee === 0 && rawDeliveryFee > 0
+                  ? 'Grátis'
+                  : `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`}
               </span>
             </div>
 
@@ -191,7 +208,10 @@ export default function CartDrawer({ open, onClose, settings }) {
               onClick={handleCheckout}
               className="w-full py-4 rounded-xl font-bold active:scale-[0.98] transition-all text-base"
               style={{
-                backgroundColor: settings?.button_color || settings?.product_button_background_color || '#059669',
+                backgroundColor:
+                  settings?.button_color ||
+                  settings?.product_button_background_color ||
+                  '#059669',
                 color: settings?.product_button_text_color || '#ffffff',
               }}
             >
