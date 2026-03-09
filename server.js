@@ -471,47 +471,62 @@ app.post("/api/settings", async (req, res) => {
 
     const existing = await query("SELECT id FROM site_settings LIMIT 1");
 
+    const fields = [
+      "store_name",
+      "whatsapp_number",
+      "logo_url",
+      "header_text",
+
+      "primary_color",
+      "button_color",
+      "background_color",
+      "header_color",
+      "cart_color",
+
+      "delivery_fee",
+      "min_order_value",
+
+      "free_shipping_enabled",
+      "free_shipping_threshold",
+      "free_shipping_text",
+      "free_shipping_remaining_text",
+      "free_shipping_success_text",
+
+      "show_fake_reviews",
+      "fake_rating",
+      "fake_reviews_count",
+
+      "opening_time",
+      "closing_time",
+      "is_open_override",
+      "closed_message"
+    ];
+
+    const values = fields.map(f => data[f] ?? null);
+
     if (existing.length > 0) {
       const id = existing[0].id;
 
+      const setClause = fields.map(f => `${f} = ?`).join(", ");
+
       await query(
-        `UPDATE site_settings SET
-        store_name = ?, whatsapp_number = ?, background_color = ?,
-        opening_time = ?, closing_time = ?, is_open_override = ?
-        WHERE id = ?`,
-        [
-          data.store_name || "",
-          data.whatsapp_number || "",
-          data.background_color || "#ffffff",
-          data.opening_time || null,
-          data.closing_time || null,
-          data.is_open_override ?? null,
-          id,
-        ]
+        `UPDATE site_settings SET ${setClause} WHERE id = ?`,
+        [...values, id]
       );
     } else {
+      const placeholders = fields.map(() => "?").join(", ");
+
       await query(
-        `INSERT INTO site_settings
-        (store_name, whatsapp_number, background_color, opening_time, closing_time, is_open_override)
-        VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          data.store_name || "",
-          data.whatsapp_number || "",
-          data.background_color || "#ffffff",
-          data.opening_time || null,
-          data.closing_time || null,
-          data.is_open_override ?? null,
-        ]
+        `INSERT INTO site_settings (${fields.join(",")})
+        VALUES (${placeholders})`,
+        values
       );
     }
 
     res.json({ success: true });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao salvar configurações" });
   }
-});
-
-app.listen(PORT, () => {
-  console.log(`🚀 API rodando na porta ${PORT}`);
 });
