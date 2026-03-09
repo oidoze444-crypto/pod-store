@@ -69,9 +69,10 @@ export default function ProductCard({ product, flavors, settings }) {
 
   return (
     <div
-      className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col ${
+      className={`rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col ${
         outOfStock ? 'opacity-70' : ''
       }`}
+      style={{ backgroundColor: settings?.product_card_background_color || '#ffffff' }}
     >
       <div className="relative aspect-square bg-gray-100 overflow-hidden">
         {!product.image_url && <div className="absolute inset-0 animate-pulse bg-gray-200" />}
@@ -90,21 +91,39 @@ export default function ProductCard({ product, flavors, settings }) {
         )}
 
         {Number(product.is_featured) === 1 && Number(product.stock) > 0 && (
-          <div className="absolute top-2 left-2 bg-amber-500 text-white text-[11px] sm:text-xs font-bold px-2 py-1 rounded-full shadow flex items-center gap-1">
+          <div
+            className="absolute top-2 left-2 text-[11px] sm:text-xs font-bold px-2 py-1 rounded-full shadow flex items-center gap-1"
+            style={{
+              backgroundColor: settings?.badge_featured_background_color || '#f59e0b',
+              color: settings?.badge_featured_text_color || '#ffffff',
+            }}
+          >
             <Star className="w-3 h-3 fill-current" />
             Mais vendido
           </div>
         )}
 
         {lowStock && (
-          <div className="absolute top-2 right-2 bg-orange-500 text-white text-[11px] sm:text-xs font-bold px-2 py-1 rounded-full shadow">
+          <div
+            className="absolute top-2 right-2 text-[11px] sm:text-xs font-bold px-2 py-1 rounded-full shadow"
+            style={{
+              backgroundColor: settings?.badge_low_stock_background_color || '#f97316',
+              color: settings?.badge_low_stock_text_color || '#ffffff',
+            }}
+          >
             Últimas unidades
           </div>
         )}
 
         {outOfStock && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-full shadow">
+            <span
+              className="text-sm font-bold px-4 py-2 rounded-full shadow"
+              style={{
+                backgroundColor: settings?.badge_sold_out_background_color || '#dc2626',
+                color: settings?.badge_sold_out_text_color || '#ffffff',
+              }}
+            >
               ESGOTADO
             </span>
           </div>
@@ -112,10 +131,15 @@ export default function ProductCard({ product, flavors, settings }) {
       </div>
 
       <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-bold text-gray-900 text-sm">{product.name}</h3>
+        <h3
+          className="font-bold text-sm"
+          style={{ color: settings?.product_name_color || '#111827' }}
+        >
+          {product.name}
+        </h3>
 
         {Number(settings?.show_fake_reviews) === 1 && (
-          <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+          <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: settings?.product_description_color || '#6b7280' }}>
             <Star className="w-3 h-3 text-yellow-500 fill-current" />
             <span>
               {settings?.fake_rating || 4.9} ({settings?.fake_reviews_count || 127} avaliações)
@@ -123,25 +147,39 @@ export default function ProductCard({ product, flavors, settings }) {
           </div>
         )}
 
-        {cleanDescription && <p className="text-gray-500 text-xs mt-1">{cleanDescription}</p>}
+        {cleanDescription && (
+          <p
+            className="text-xs mt-1"
+            style={{ color: settings?.product_description_color || '#6b7280' }}
+          >
+            {cleanDescription}
+          </p>
+        )}
 
         <div className="mt-2 mb-2">
-          <span className="text-xl font-extrabold text-emerald-600">
+          <span
+            className="text-xl font-extrabold"
+            style={{ color: settings?.product_price_color || '#059669' }}
+          >
             R$ {parseFloat(product.price || 0).toFixed(2).replace('.', ',')}
           </span>
         </div>
 
         {requiresFlavor && (
           <div className="mb-3">
-            <label className="text-xs text-gray-500 mb-1 block">Escolha o sabor:</label>
+            <label
+              className="text-xs mb-1 block"
+              style={{ color: settings?.product_description_color || '#6b7280' }}
+            >
+              Escolha o sabor:
+            </label>
 
             <select
               value={selectedFlavor}
               onChange={(e) => setSelectedFlavor(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none"
             >
               <option value="">Selecione um sabor</option>
-
               {productFlavors.map((f) => (
                 <option key={f.id} value={f.name}>
                   {f.name}
@@ -154,15 +192,19 @@ export default function ProductCard({ product, flavors, settings }) {
         <button
           onClick={handleAdd}
           disabled={outOfStock || added || (requiresFlavor && !selectedFlavor)}
-          className={`mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-            added
-              ? 'bg-emerald-100 text-emerald-700'
-              : outOfStock
-              ? 'bg-gray-200 text-gray-400'
-              : requiresFlavor && !selectedFlavor
-              ? 'bg-gray-200 text-gray-400'
-              : 'bg-emerald-600 text-white hover:bg-emerald-700'
-          }`}
+          className="mt-auto w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all"
+          style={{
+            backgroundColor: added
+              ? '#d1fae5'
+              : outOfStock || (requiresFlavor && !selectedFlavor)
+              ? '#e5e7eb'
+              : settings?.product_button_background_color || '#059669',
+            color: added
+              ? '#047857'
+              : outOfStock || (requiresFlavor && !selectedFlavor)
+              ? '#9ca3af'
+              : settings?.product_button_text_color || '#ffffff',
+          }}
         >
           {added ? (
             <>

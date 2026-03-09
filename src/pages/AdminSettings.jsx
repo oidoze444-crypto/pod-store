@@ -7,10 +7,117 @@ import { toast } from 'sonner';
 
 const API_URL = 'https://pod-store-md9c.onrender.com';
 
+const buildInitialForm = (settingsData = {}) => ({
+  ...settingsData,
+
+  store_name: settingsData.store_name || 'POD Store',
+  whatsapp_number: settingsData.whatsapp_number || '',
+  header_text: settingsData.header_text || 'Os melhores PODs com entrega rápida!',
+  logo_url: settingsData.logo_url || '',
+
+  delivery_fee: Number(settingsData.delivery_fee ?? 0),
+  min_order_value: Number(settingsData.min_order_value ?? 0),
+
+  opening_time: settingsData.opening_time || '08:00',
+  closing_time: settingsData.closing_time || '22:00',
+  is_open_override: Number(settingsData.is_open_override ?? 1),
+  closed_message: settingsData.closed_message || 'Estamos fechados no momento. Volte em breve!',
+
+  free_shipping_enabled: Number(settingsData.free_shipping_enabled ?? 1),
+  free_shipping_threshold: Number(settingsData.free_shipping_threshold ?? 400),
+  free_shipping_text:
+    settingsData.free_shipping_text || '🚚 Frete grátis para pedidos acima de R$ {valor}',
+  free_shipping_remaining_text:
+    settingsData.free_shipping_remaining_text || 'Faltam R$ {valor} para frete grátis',
+  free_shipping_success_text:
+    settingsData.free_shipping_success_text || 'Parabéns! Você ganhou frete grátis',
+
+  show_fake_reviews: Number(settingsData.show_fake_reviews ?? 1),
+  fake_rating: Number(settingsData.fake_rating ?? 4.9),
+  fake_reviews_count: Number(settingsData.fake_reviews_count ?? 127),
+
+  primary_color: settingsData.primary_color || '#620594',
+  button_color: settingsData.button_color || '#059669',
+  background_color: settingsData.background_color || '#f9fafb',
+
+  header_background_color: settingsData.header_background_color || '#ffffff',
+  header_text_color: settingsData.header_text_color || '#111827',
+  header_border_color: settingsData.header_border_color || '#e5e7eb',
+
+  search_background_color: settingsData.search_background_color || '#f3f4f6',
+  search_text_color: settingsData.search_text_color || '#111827',
+
+  cart_button_background_color: settingsData.cart_button_background_color || '#ffffff',
+  cart_button_icon_color: settingsData.cart_button_icon_color || '#374151',
+  cart_badge_background_color: settingsData.cart_badge_background_color || '#ef4444',
+  cart_badge_text_color: settingsData.cart_badge_text_color || '#ffffff',
+
+  cart_drawer_background_color: settingsData.cart_drawer_background_color || '#ffffff',
+  cart_item_background_color: settingsData.cart_item_background_color || '#f9fafb',
+  cart_total_background_color: settingsData.cart_total_background_color || '#ffffff',
+
+  product_card_background_color: settingsData.product_card_background_color || '#ffffff',
+  product_name_color: settingsData.product_name_color || '#111827',
+  product_description_color: settingsData.product_description_color || '#6b7280',
+  product_price_color: settingsData.product_price_color || '#059669',
+  product_button_background_color: settingsData.product_button_background_color || '#059669',
+  product_button_text_color: settingsData.product_button_text_color || '#ffffff',
+
+  badge_featured_background_color: settingsData.badge_featured_background_color || '#f59e0b',
+  badge_featured_text_color: settingsData.badge_featured_text_color || '#ffffff',
+  badge_low_stock_background_color: settingsData.badge_low_stock_background_color || '#f97316',
+  badge_low_stock_text_color: settingsData.badge_low_stock_text_color || '#ffffff',
+  badge_sold_out_background_color: settingsData.badge_sold_out_background_color || '#dc2626',
+  badge_sold_out_text_color: settingsData.badge_sold_out_text_color || '#ffffff',
+
+  free_shipping_bar_background_color:
+    settingsData.free_shipping_bar_background_color || '#e5e7eb',
+  free_shipping_bar_fill_color:
+    settingsData.free_shipping_bar_fill_color || '#10b981',
+  free_shipping_box_background_color:
+    settingsData.free_shipping_box_background_color || '#ecfdf5',
+  free_shipping_text_color: settingsData.free_shipping_text_color || '#065f46',
+});
+
+const colorFields = [
+  ['primary_color', 'Cor principal'],
+  ['button_color', 'Cor botões padrão'],
+  ['background_color', 'Cor fundo do site'],
+  ['header_background_color', 'Topo fundo'],
+  ['header_text_color', 'Topo texto'],
+  ['header_border_color', 'Topo borda'],
+  ['search_background_color', 'Busca fundo'],
+  ['search_text_color', 'Busca texto'],
+  ['cart_button_background_color', 'Botão carrinho fundo'],
+  ['cart_button_icon_color', 'Botão carrinho ícone'],
+  ['cart_badge_background_color', 'Badge carrinho fundo'],
+  ['cart_badge_text_color', 'Badge carrinho texto'],
+  ['cart_drawer_background_color', 'Carrinho lateral fundo'],
+  ['cart_item_background_color', 'Item do carrinho fundo'],
+  ['cart_total_background_color', 'Rodapé do carrinho fundo'],
+  ['product_card_background_color', 'Card do produto fundo'],
+  ['product_name_color', 'Nome do produto'],
+  ['product_description_color', 'Descrição do produto'],
+  ['product_price_color', 'Preço do produto'],
+  ['product_button_background_color', 'Botão produto fundo'],
+  ['product_button_text_color', 'Botão produto texto'],
+  ['badge_featured_background_color', 'Badge destaque fundo'],
+  ['badge_featured_text_color', 'Badge destaque texto'],
+  ['badge_low_stock_background_color', 'Badge últimas unidades fundo'],
+  ['badge_low_stock_text_color', 'Badge últimas unidades texto'],
+  ['badge_sold_out_background_color', 'Badge esgotado fundo'],
+  ['badge_sold_out_text_color', 'Badge esgotado texto'],
+  ['free_shipping_box_background_color', 'Box frete grátis fundo'],
+  ['free_shipping_text_color', 'Texto frete grátis'],
+  ['free_shipping_bar_background_color', 'Barra frete fundo'],
+  ['free_shipping_bar_fill_color', 'Barra frete progresso'],
+];
+
 export default function AdminSettings() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [formReady, setFormReady] = useState(false);
 
   const { data: settingsData, isLoading } = useQuery({
     queryKey: ['admin-settings'],
@@ -18,57 +125,26 @@ export default function AdminSettings() {
   });
 
   useEffect(() => {
-    if (settingsData && !form) {
-      setForm({
-        ...settingsData,
-        free_shipping_enabled: settingsData.free_shipping_enabled ?? 1,
-        free_shipping_threshold: settingsData.free_shipping_threshold ?? 400,
-        free_shipping_text:
-          settingsData.free_shipping_text || '🚚 Frete grátis para pedidos acima de R$ {valor}',
-        free_shipping_remaining_text:
-          settingsData.free_shipping_remaining_text || 'Faltam R$ {valor} para frete grátis',
-        free_shipping_success_text:
-          settingsData.free_shipping_success_text || 'Parabéns! Você ganhou frete grátis',
-        show_fake_reviews: settingsData.show_fake_reviews ?? 1,
-        fake_rating: settingsData.fake_rating ?? 4.9,
-        fake_reviews_count: settingsData.fake_reviews_count ?? 127,
-      });
-    } else if (!settingsData && !isLoading && !form) {
-      setForm({
-        id: undefined,
-        store_name: 'POD Store',
-        whatsapp_number: '',
-        primary_color: '#620594',
-        button_color: '#059669',
-        background_color: '#f9fafb',
-        header_text: 'Os melhores PODs com entrega rápida!',
-        delivery_fee: 0,
-        min_order_value: 0,
-        opening_time: '08:00',
-        closing_time: '22:00',
-        is_open_override: true,
-        closed_message: 'Estamos fechados no momento. Volte em breve!',
-        logo_url: '',
-        free_shipping_enabled: 1,
-        free_shipping_threshold: 400,
-        free_shipping_text: '🚚 Frete grátis para pedidos acima de R$ {valor}',
-        free_shipping_remaining_text: 'Faltam R$ {valor} para frete grátis',
-        free_shipping_success_text: 'Parabéns! Você ganhou frete grátis',
-        show_fake_reviews: 1,
-        fake_rating: 4.9,
-        fake_reviews_count: 127,
-      });
+    if (formReady) return;
+
+    if (settingsData) {
+      setForm(buildInitialForm(settingsData));
+      setFormReady(true);
+    } else if (!isLoading) {
+      setForm(buildInitialForm());
+      setFormReady(true);
     }
-  }, [settingsData, isLoading, form]);
+  }, [settingsData, isLoading, formReady]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       const { id, created_at, updated_at, ...data } = form;
       return settingsApi.save(data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
-      queryClient.invalidateQueries({ queryKey: ['settings'] });
+    onSuccess: async () => {
+      setFormReady(false);
+      await queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
+      await queryClient.invalidateQueries({ queryKey: ['settings'] });
       toast.success('Configurações salvas!');
     },
     onError: () => {
@@ -82,7 +158,6 @@ export default function AdminSettings() {
 
     try {
       setUploading(true);
-
       const formData = new FormData();
       formData.append('image', file);
 
@@ -139,12 +214,12 @@ export default function AdminSettings() {
 
   return (
     <AdminLayout title="Configurações">
-      <div className="space-y-6 max-w-3xl">
+      <div className="space-y-6 max-w-4xl">
         <Section title="Informações da Loja" icon={Phone}>
           <Field label="Nome da Loja">
             <input
               type="text"
-              value={form.store_name || ''}
+              value={form.store_name}
               onChange={(e) => setForm((p) => ({ ...p, store_name: e.target.value }))}
               className={inputClass}
             />
@@ -153,18 +228,17 @@ export default function AdminSettings() {
           <Field label="Texto principal">
             <input
               type="text"
-              value={form.header_text || ''}
+              value={form.header_text}
               onChange={(e) => setForm((p) => ({ ...p, header_text: e.target.value }))}
               className={inputClass}
             />
           </Field>
 
-          <Field label="WhatsApp (com DDI, ex: 5511999999999)">
+          <Field label="WhatsApp">
             <input
               type="text"
-              value={form.whatsapp_number || ''}
+              value={form.whatsapp_number}
               onChange={(e) => setForm((p) => ({ ...p, whatsapp_number: e.target.value }))}
-              placeholder="5511999999999"
               className={inputClass}
             />
           </Field>
@@ -183,58 +257,26 @@ export default function AdminSettings() {
           </Field>
         </Section>
 
-        <Section title="Aparência" icon={Palette}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field label="Cor Principal">
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={form.primary_color || '#620594'}
-                  onChange={(e) => setForm((p) => ({ ...p, primary_color: e.target.value }))}
-                  className="w-10 h-10 rounded-lg border cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={form.primary_color || ''}
-                  onChange={(e) => setForm((p) => ({ ...p, primary_color: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
-            </Field>
-
-            <Field label="Cor Botões">
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={form.button_color || '#059669'}
-                  onChange={(e) => setForm((p) => ({ ...p, button_color: e.target.value }))}
-                  className="w-10 h-10 rounded-lg border cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={form.button_color || ''}
-                  onChange={(e) => setForm((p) => ({ ...p, button_color: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
-            </Field>
-
-            <Field label="Cor Fundo">
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={form.background_color || '#f9fafb'}
-                  onChange={(e) => setForm((p) => ({ ...p, background_color: e.target.value }))}
-                  className="w-10 h-10 rounded-lg border cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={form.background_color || ''}
-                  onChange={(e) => setForm((p) => ({ ...p, background_color: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
-            </Field>
+        <Section title="Cores do Site" icon={Palette}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {colorFields.map(([key, label]) => (
+              <Field key={key} label={label}>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={form[key] || '#000000'}
+                    onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
+                    className="w-12 h-10 rounded-lg border cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={form[key] || ''}
+                    onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+              </Field>
+            ))}
           </div>
         </Section>
 
@@ -244,7 +286,7 @@ export default function AdminSettings() {
               <input
                 type="number"
                 step="0.01"
-                value={form.delivery_fee || 0}
+                value={form.delivery_fee}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, delivery_fee: parseFloat(e.target.value) || 0 }))
                 }
@@ -256,7 +298,7 @@ export default function AdminSettings() {
               <input
                 type="number"
                 step="0.01"
-                value={form.min_order_value || 0}
+                value={form.min_order_value}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, min_order_value: parseFloat(e.target.value) || 0 }))
                 }
@@ -270,7 +312,7 @@ export default function AdminSettings() {
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={!!form.free_shipping_enabled}
+              checked={Number(form.free_shipping_enabled) === 1}
               onChange={(e) =>
                 setForm((p) => ({ ...p, free_shipping_enabled: e.target.checked ? 1 : 0 }))
               }
@@ -283,7 +325,7 @@ export default function AdminSettings() {
             <input
               type="number"
               step="0.01"
-              value={form.free_shipping_threshold || 0}
+              value={form.free_shipping_threshold}
               onChange={(e) =>
                 setForm((p) => ({
                   ...p,
@@ -297,10 +339,8 @@ export default function AdminSettings() {
           <Field label="Texto principal">
             <input
               type="text"
-              value={form.free_shipping_text || ''}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, free_shipping_text: e.target.value }))
-              }
+              value={form.free_shipping_text}
+              onChange={(e) => setForm((p) => ({ ...p, free_shipping_text: e.target.value }))}
               className={inputClass}
             />
           </Field>
@@ -308,7 +348,7 @@ export default function AdminSettings() {
           <Field label="Texto quando ainda falta valor">
             <input
               type="text"
-              value={form.free_shipping_remaining_text || ''}
+              value={form.free_shipping_remaining_text}
               onChange={(e) =>
                 setForm((p) => ({ ...p, free_shipping_remaining_text: e.target.value }))
               }
@@ -319,7 +359,7 @@ export default function AdminSettings() {
           <Field label="Texto quando atingir frete grátis">
             <input
               type="text"
-              value={form.free_shipping_success_text || ''}
+              value={form.free_shipping_success_text}
               onChange={(e) =>
                 setForm((p) => ({ ...p, free_shipping_success_text: e.target.value }))
               }
@@ -332,7 +372,7 @@ export default function AdminSettings() {
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={!!form.show_fake_reviews}
+              checked={Number(form.show_fake_reviews) === 1}
               onChange={(e) =>
                 setForm((p) => ({ ...p, show_fake_reviews: e.target.checked ? 1 : 0 }))
               }
@@ -348,7 +388,7 @@ export default function AdminSettings() {
                 step="0.1"
                 min="0"
                 max="5"
-                value={form.fake_rating || 4.9}
+                value={form.fake_rating}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, fake_rating: parseFloat(e.target.value) || 4.9 }))
                 }
@@ -359,7 +399,7 @@ export default function AdminSettings() {
             <Field label="Quantidade de avaliações">
               <input
                 type="number"
-                value={form.fake_reviews_count || 127}
+                value={form.fake_reviews_count}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, fake_reviews_count: parseInt(e.target.value) || 0 }))
                 }
@@ -374,7 +414,7 @@ export default function AdminSettings() {
             <Field label="Horário de abertura">
               <input
                 type="time"
-                value={form.opening_time || '08:00'}
+                value={form.opening_time}
                 onChange={(e) => setForm((p) => ({ ...p, opening_time: e.target.value }))}
                 className={inputClass}
               />
@@ -383,7 +423,7 @@ export default function AdminSettings() {
             <Field label="Horário de fechamento">
               <input
                 type="time"
-                value={form.closing_time || '22:00'}
+                value={form.closing_time}
                 onChange={(e) => setForm((p) => ({ ...p, closing_time: e.target.value }))}
                 className={inputClass}
               />
@@ -393,17 +433,19 @@ export default function AdminSettings() {
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={form.is_open_override === true}
-              onChange={(e) => setForm((p) => ({ ...p, is_open_override: e.target.checked }))}
+              checked={Number(form.is_open_override) === 1}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, is_open_override: e.target.checked ? 1 : 0 }))
+              }
               className="w-4 h-4 rounded text-emerald-600"
             />
-            <span className="text-sm font-medium">Forçar loja aberta (ignora horário)</span>
+            <span className="text-sm font-medium">Forçar loja aberta</span>
           </label>
 
           <Field label="Mensagem de loja fechada">
             <input
               type="text"
-              value={form.closed_message || ''}
+              value={form.closed_message}
               onChange={(e) => setForm((p) => ({ ...p, closed_message: e.target.value }))}
               className={inputClass}
             />
