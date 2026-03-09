@@ -470,7 +470,6 @@ app.post("/api/settings", async (req, res) => {
     const data = req.body;
 
     const existing = await query("SELECT id FROM site_settings LIMIT 1");
-
     const fields = [
       "store_name",
       "whatsapp_number",
