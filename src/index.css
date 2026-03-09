@@ -86,3 +86,15 @@
     @apply bg-background text-foreground;
   }
 }
+html, body {
+  touch-action: manipulation;
+}
+
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
+  touch-action: manipulation;
+}

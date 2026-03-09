@@ -33,45 +33,51 @@ function StoreContent() {
 
   const { data: settings = {} } = useQuery({
     queryKey: ['settings'],
-    queryFn: () => settingsApi.get().then(d => d || {}),
+    queryFn: () => settingsApi.get().then((d) => d || {}),
   });
 
   const isStoreClosed = useMemo(() => {
     if (settings.is_open_override === false) return true;
     if (settings.is_open_override === true) return false;
     if (!settings.opening_time || !settings.closing_time) return false;
+
     const now = new Date();
     const [oh, om] = settings.opening_time.split(':').map(Number);
     const [ch, cm] = settings.closing_time.split(':').map(Number);
     const mins = now.getHours() * 60 + now.getMinutes();
+
     return mins < oh * 60 + om || mins > ch * 60 + cm;
   }, [settings]);
 
-  const activeProducts = products.filter(p => p.is_active !== false);
+  const activeProducts = products.filter((p) => Number(p.is_active) !== 0);
 
   const categories = useMemo(() => {
-    const cats = [...new Set(activeProducts.map(p => p.category).filter(Boolean))];
+    const cats = [...new Set(activeProducts.map((p) => p.category).filter(Boolean))];
     return cats;
   }, [activeProducts]);
 
   const filteredProducts = useMemo(() => {
     let result = activeProducts;
+
     if (selectedCategory !== 'all') {
-      result = result.filter(p => p.category === selectedCategory);
+      result = result.filter((p) => p.category === selectedCategory);
     }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(p => 
-        p.name?.toLowerCase().includes(q) || 
-        p.description?.toLowerCase().includes(q) ||
-        p.category?.toLowerCase().includes(q)
+      result = result.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q) ||
+          p.category?.toLowerCase().includes(q)
       );
     }
+
     return result;
   }, [activeProducts, selectedCategory, searchQuery]);
 
-  const featuredProducts = filteredProducts.filter(p => p.is_featured);
-  const regularProducts = filteredProducts.filter(p => !p.is_featured);
+  const featuredProducts = filteredProducts.filter((p) => Number(p.is_featured) === 1);
+  const regularProducts = filteredProducts.filter((p) => Number(p.is_featured) !== 1);
 
   if (loadingProducts) {
     return (
@@ -82,12 +88,15 @@ function StoreContent() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: settings.background_color || '#f9fafb' }}>
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: settings.background_color || '#f9fafb' }}
+    >
       {isStoreClosed && <ClosedOverlay settings={settings} />}
-      
-      <StoreHeader 
-        settings={settings} 
-        onCartOpen={() => setCartOpen(true)} 
+
+      <StoreHeader
+        settings={settings}
+        onCartOpen={() => setCartOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -109,7 +118,8 @@ function StoreContent() {
             >
               Todos
             </button>
-            {categories.map(cat => (
+
+            {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -129,8 +139,13 @@ function StoreContent() {
           <div className="mt-4">
             <h2 className="text-lg font-bold text-gray-900 mb-3">⭐ Destaques</h2>
             <div className="grid grid-cols-2 gap-3">
-              {featuredProducts.map(product => (
-                <ProductCard key={product.id} product={product} flavors={flavors} />
+              {featuredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  flavors={flavors}
+                  settings={settings}
+                />
               ))}
             </div>
           </div>
@@ -140,6 +155,7 @@ function StoreContent() {
           {featuredProducts.length > 0 && regularProducts.length > 0 && (
             <h2 className="text-lg font-bold text-gray-900 mb-3">Todos os Produtos</h2>
           )}
+
           {filteredProducts.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <p className="text-lg font-medium">Nenhum produto encontrado</p>
@@ -147,12 +163,23 @@ function StoreContent() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {(featuredProducts.length > 0 ? regularProducts : filteredProducts).map(product => (
-                <ProductCard key={product.id} product={product} flavors={flavors} />
+              {(featuredProducts.length > 0 ? regularProducts : filteredProducts).map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  flavors={flavors}
+                  settings={settings}
+                />
               ))}
             </div>
           )}
         </div>
+
+        <footer className="mt-10 mb-6">
+          <div className="text-center text-xs text-gray-400">
+            © {new Date().getFullYear()} Todos os direitos reservados — IC DIGITAL
+          </div>
+        </footer>
       </main>
 
       <FloatingCartButton onClick={() => setCartOpen(true)} />

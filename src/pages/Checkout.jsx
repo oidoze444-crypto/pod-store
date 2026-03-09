@@ -164,7 +164,7 @@ function CheckoutContent() {
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 
     clearCart();
-    window.open(whatsappUrl, '_blank');
+    window.location.href = whatsappUrl;
     setSending(false);
     toast.success('Pedido enviado!');
     navigate(createPageUrl('Store'));
