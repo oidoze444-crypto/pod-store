@@ -137,7 +137,6 @@ export default function AdminSettings() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
 
   const { data: settingsData, isLoading } = useQuery({
     queryKey: ['admin-settings'],
@@ -146,20 +145,86 @@ export default function AdminSettings() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (hasInitialized) return;
-
     setForm(buildInitialForm(settingsData || {}));
-    setHasInitialized(true);
-  }, [settingsData, isLoading, hasInitialized]);
+  }, [settingsData, isLoading]);
 
   const saveMutation = useMutation({
-    mutationFn: async () => settingsApi.save(form),
+    mutationFn: async () => {
+      const payload = {
+        store_name: form.store_name || '',
+        whatsapp_number: form.whatsapp_number || '',
+        header_text: form.header_text || '',
+        logo_url: form.logo_url || '',
+
+        delivery_fee: Number(form.delivery_fee || 0),
+        min_order_value: Number(form.min_order_value || 0),
+
+        opening_time: form.opening_time || '08:00',
+        closing_time: form.closing_time || '22:00',
+        is_open_override: Number(form.is_open_override) === 1 ? 1 : 0,
+        closed_message: form.closed_message || '',
+
+        free_shipping_enabled: Number(form.free_shipping_enabled) === 1 ? 1 : 0,
+        free_shipping_threshold: Number(form.free_shipping_threshold || 0),
+        free_shipping_text: form.free_shipping_text || '',
+        free_shipping_remaining_text: form.free_shipping_remaining_text || '',
+        free_shipping_success_text: form.free_shipping_success_text || '',
+
+        show_fake_reviews: Number(form.show_fake_reviews) === 1 ? 1 : 0,
+        fake_rating: Number(form.fake_rating || 0),
+        fake_reviews_count: Number(form.fake_reviews_count || 0),
+
+        primary_color: form.primary_color || '#620594',
+        button_color: form.button_color || '#059669',
+        background_color: form.background_color || '#f9fafb',
+
+        header_background_color: form.header_background_color || '#ffffff',
+        header_text_color: form.header_text_color || '#111827',
+        header_border_color: form.header_border_color || '#e5e7eb',
+
+        search_background_color: form.search_background_color || '#f3f4f6',
+        search_text_color: form.search_text_color || '#111827',
+
+        cart_button_background_color: form.cart_button_background_color || '#ffffff',
+        cart_button_icon_color: form.cart_button_icon_color || '#374151',
+        cart_badge_background_color: form.cart_badge_background_color || '#ef4444',
+        cart_badge_text_color: form.cart_badge_text_color || '#ffffff',
+
+        cart_drawer_background_color: form.cart_drawer_background_color || '#ffffff',
+        cart_item_background_color: form.cart_item_background_color || '#f9fafb',
+        cart_total_background_color: form.cart_total_background_color || '#ffffff',
+
+        product_card_background_color: form.product_card_background_color || '#ffffff',
+        product_name_color: form.product_name_color || '#111827',
+        product_description_color: form.product_description_color || '#6b7280',
+        product_price_color: form.product_price_color || '#059669',
+        product_button_background_color: form.product_button_background_color || '#059669',
+        product_button_text_color: form.product_button_text_color || '#ffffff',
+
+        badge_featured_background_color: form.badge_featured_background_color || '#f59e0b',
+        badge_featured_text_color: form.badge_featured_text_color || '#ffffff',
+        badge_low_stock_background_color: form.badge_low_stock_background_color || '#f97316',
+        badge_low_stock_text_color: form.badge_low_stock_text_color || '#ffffff',
+        badge_sold_out_background_color: form.badge_sold_out_background_color || '#dc2626',
+        badge_sold_out_text_color: form.badge_sold_out_text_color || '#ffffff',
+
+        free_shipping_bar_background_color:
+          form.free_shipping_bar_background_color || '#e5e7eb',
+        free_shipping_bar_fill_color:
+          form.free_shipping_bar_fill_color || '#10b981',
+        free_shipping_box_background_color:
+          form.free_shipping_box_background_color || '#ecfdf5',
+        free_shipping_text_color: form.free_shipping_text_color || '#065f46',
+      };
+
+      return settingsApi.save(payload);
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
       await queryClient.invalidateQueries({ queryKey: ['settings'] });
       toast.success('Configurações salvas!');
     },
-    onError: (error) => {
+    onError: async (error) => {
       console.error(error);
       toast.error('Erro ao salvar configurações');
     },

@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
 /* =========================
-   UPLOADS
+UPLOADS
 ========================= */
 
 const uploadDir = path.join(__dirname, "uploads");
@@ -26,10 +26,8 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
     const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, unique + path.extname(file.originalname));
   },
@@ -40,25 +38,20 @@ const upload = multer({ storage });
 app.use("/uploads", express.static(uploadDir));
 
 app.post("/api/upload", upload.single("image"), (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: "Nenhum arquivo enviado" });
-    }
-
-    const url = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
-
-    res.json({
-      success: true,
-      url,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao fazer upload" });
+  if (!req.file) {
+    return res.status(400).json({ error: "Nenhum arquivo enviado" });
   }
+
+  const url = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+
+  res.json({
+    success: true,
+    url,
+  });
 });
 
 /* =========================
-   MYSQL
+MYSQL
 ========================= */
 
 const db = mysql.createPool({
@@ -70,15 +63,6 @@ const db = mysql.createPool({
   connectionLimit: 10,
 });
 
-db.getConnection((err, connection) => {
-  if (err) {
-    console.error("❌ ERRO MYSQL:", err);
-  } else {
-    console.log("✅ Conectado ao MySQL");
-    connection.release();
-  }
-});
-
 function query(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.query(sql, params, (err, results) => {
@@ -88,371 +72,12 @@ function query(sql, params = []) {
   });
 }
 
-function normalizeFlavorIds(flavorIds) {
-  if (!flavorIds) return JSON.stringify([]);
-
-  if (Array.isArray(flavorIds)) {
-    return JSON.stringify(flavorIds.map(Number).filter(Boolean));
-  }
-
-  if (typeof flavorIds === "string") {
-    try {
-      const parsed = JSON.parse(flavorIds);
-
-      if (Array.isArray(parsed)) {
-        return JSON.stringify(parsed.map(Number).filter(Boolean));
-      }
-
-      if (typeof parsed === "string") {
-        const parsedAgain = JSON.parse(parsed);
-        if (Array.isArray(parsedAgain)) {
-          return JSON.stringify(parsedAgain.map(Number).filter(Boolean));
-        }
-      }
-    } catch (e) {
-      const splitIds = flavorIds
-        .split(",")
-        .map((id) => Number(String(id).trim()))
-        .filter(Boolean);
-
-      return JSON.stringify(splitIds);
-    }
-  }
-
-  return JSON.stringify([]);
-}
-
 app.get("/", (req, res) => {
   res.send("API online");
 });
 
 /* =========================
-   PRODUCTS
-========================= */
-
-app.get("/api/products", async (req, res) => {
-  try {
-    const results = await query("SELECT * FROM products ORDER BY id DESC");
-    res.json(results);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao buscar produtos" });
-  }
-});
-
-app.get("/api/products/:id", async (req, res) => {
-  try {
-    const results = await query("SELECT * FROM products WHERE id = ?", [req.params.id]);
-    res.json(results[0] || null);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao buscar produto" });
-  }
-});
-
-app.post("/api/products", async (req, res) => {
-  try {
-    const {
-      name,
-      description,
-      price,
-      category,
-      stock,
-      image_url,
-      is_active,
-      is_featured,
-      low_stock_threshold,
-      flavor_ids,
-    } = req.body;
-
-    const result = await query(
-      `INSERT INTO products
-      (name, description, price, category, stock, image_url, is_active, is_featured, low_stock_threshold, flavor_ids)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        name || "",
-        description || "",
-        price || 0,
-        category || "",
-        stock || 0,
-        image_url || "",
-        is_active ?? 1,
-        is_featured ?? 0,
-        low_stock_threshold ?? 5,
-        normalizeFlavorIds(flavor_ids),
-      ]
-    );
-
-    res.json({ success: true, id: result.insertId });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao criar produto" });
-  }
-});
-
-app.put("/api/products/:id", async (req, res) => {
-  try {
-    const {
-      name,
-      description,
-      price,
-      category,
-      stock,
-      image_url,
-      is_active,
-      is_featured,
-      low_stock_threshold,
-      flavor_ids,
-    } = req.body;
-
-    await query(
-      `UPDATE products SET
-      name = ?, description = ?, price = ?, category = ?, stock = ?,
-      image_url = ?, is_active = ?, is_featured = ?, low_stock_threshold = ?, flavor_ids = ?
-      WHERE id = ?`,
-      [
-        name || "",
-        description || "",
-        price || 0,
-        category || "",
-        stock || 0,
-        image_url || "",
-        is_active ?? 1,
-        is_featured ?? 0,
-        low_stock_threshold ?? 5,
-        normalizeFlavorIds(flavor_ids),
-        req.params.id,
-      ]
-    );
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao atualizar produto" });
-  }
-});
-
-app.delete("/api/products/:id", async (req, res) => {
-  try {
-    await query("DELETE FROM products WHERE id = ?", [req.params.id]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao excluir produto" });
-  }
-});
-
-/* =========================
-   FLAVORS
-========================= */
-
-app.get("/api/flavors", async (req, res) => {
-  try {
-    const results = await query("SELECT * FROM flavors ORDER BY id DESC");
-    res.json(results);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao buscar sabores" });
-  }
-});
-
-app.post("/api/flavors", async (req, res) => {
-  try {
-    const { name, is_active } = req.body;
-
-    const result = await query(
-      `INSERT INTO flavors (name, is_active)
-       VALUES (?, ?)`,
-      [name || "", is_active ?? 1]
-    );
-
-    res.json({ success: true, id: result.insertId });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao criar sabor" });
-  }
-});
-
-app.put("/api/flavors/:id", async (req, res) => {
-  try {
-    const { name, is_active } = req.body;
-
-    await query(
-      `UPDATE flavors
-       SET name = ?, is_active = ?
-       WHERE id = ?`,
-      [name || "", is_active ?? 1, req.params.id]
-    );
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao atualizar sabor" });
-  }
-});
-
-app.delete("/api/flavors/:id", async (req, res) => {
-  try {
-    await query("DELETE FROM flavors WHERE id = ?", [req.params.id]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao excluir sabor" });
-  }
-});
-
-/* =========================
-   BANNERS
-========================= */
-
-app.get("/api/banners", async (req, res) => {
-  try {
-    const results = await query("SELECT * FROM banners ORDER BY `order` ASC, id DESC");
-    res.json(results);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao buscar banners" });
-  }
-});
-
-app.post("/api/banners", async (req, res) => {
-  try {
-    const { title, subtitle, image_url, is_active, order } = req.body;
-
-    const result = await query(
-      `INSERT INTO banners (title, subtitle, image_url, is_active, \`order\`)
-       VALUES (?, ?, ?, ?, ?)`,
-      [title || "", subtitle || "", image_url || "", is_active ?? 1, order ?? 0]
-    );
-
-    res.json({ success: true, id: result.insertId });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao criar banner" });
-  }
-});
-
-app.put("/api/banners/:id", async (req, res) => {
-  try {
-    const { title, subtitle, image_url, is_active, order } = req.body;
-
-    await query(
-      `UPDATE banners
-       SET title = ?, subtitle = ?, image_url = ?, is_active = ?, \`order\` = ?
-       WHERE id = ?`,
-      [title || "", subtitle || "", image_url || "", is_active ?? 1, order ?? 0, req.params.id]
-    );
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao atualizar banner" });
-  }
-});
-
-app.delete("/api/banners/:id", async (req, res) => {
-  try {
-    await query("DELETE FROM banners WHERE id = ?", [req.params.id]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao excluir banner" });
-  }
-});
-
-/* =========================
-   ORDERS
-========================= */
-
-app.get("/api/orders", async (req, res) => {
-  try {
-    const results = await query("SELECT * FROM orders ORDER BY created_at DESC");
-    res.json(results);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao buscar pedidos" });
-  }
-});
-
-app.get("/api/orders/:id", async (req, res) => {
-  try {
-    const results = await query("SELECT * FROM orders WHERE id = ?", [req.params.id]);
-    res.json(results[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao buscar pedido" });
-  }
-});
-
-app.post("/api/orders", async (req, res) => {
-  try {
-    const {
-      customer_name,
-      customer_phone,
-      address,
-      items,
-      subtotal,
-      delivery_fee,
-      total,
-      status,
-    } = req.body;
-
-    const result = await query(
-      `INSERT INTO orders
-      (customer_name, customer_phone, address, items, subtotal, delivery_fee, total, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        customer_name || "",
-        customer_phone || "",
-        JSON.stringify(address || {}),
-        JSON.stringify(items || []),
-        subtotal || 0,
-        delivery_fee || 0,
-        total || 0,
-        status || "pending",
-      ]
-    );
-
-    res.json({
-      success: true,
-      id: result.insertId,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao criar pedido" });
-  }
-});
-
-app.put("/api/orders/:id", async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    await query(
-      `UPDATE orders
-       SET status = ?
-       WHERE id = ?`,
-      [status, req.params.id]
-    );
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao atualizar pedido" });
-  }
-});
-
-app.delete("/api/orders/:id", async (req, res) => {
-  try {
-    await query("DELETE FROM orders WHERE id = ?", [req.params.id]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao excluir pedido" });
-  }
-});
-
-/* =========================
-   SETTINGS
+SETTINGS
 ========================= */
 
 app.get("/api/settings", async (req, res) => {
@@ -467,33 +92,73 @@ app.get("/api/settings", async (req, res) => {
 
 app.post("/api/settings", async (req, res) => {
   try {
-    const data = req.body;
+
+    const data = req.body || {};
+
     const existing = await query("SELECT id FROM site_settings LIMIT 1");
 
-    const fields = Object.keys(data);
-    const values = fields.map((f) => data[f]);
+    const columnsResult = await query(`
+      SELECT COLUMN_NAME
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = ?
+      AND TABLE_NAME = 'site_settings'
+    `, ["u584951003_NOVOREDIRECT"]);
+
+    const validColumns = new Set(
+      columnsResult.map((row) => row.COLUMN_NAME)
+    );
+
+    const filteredEntries = Object.entries(data)
+      .filter(([key]) => validColumns.has(key));
+
+    if (filteredEntries.length === 0) {
+      return res.status(400).json({
+        error: "Nenhum campo válido para salvar"
+      });
+    }
+
+    const fields = filteredEntries.map(([key]) => key);
+    const values = filteredEntries.map(([, value]) => value);
 
     if (existing.length > 0) {
+
       const id = existing[0].id;
-      const setClause = fields.map((f) => `${f} = ?`).join(", ");
+
+      const setClause = fields
+        .map((f) => `${f} = ?`)
+        .join(", ");
 
       await query(
         `UPDATE site_settings SET ${setClause} WHERE id = ?`,
         [...values, id]
       );
+
     } else {
-      const placeholders = fields.map(() => "?").join(", ");
+
+      const placeholders = fields
+        .map(() => "?")
+        .join(", ");
 
       await query(
-        `INSERT INTO site_settings (${fields.join(",")})
+        `INSERT INTO site_settings (${fields.join(", ")})
          VALUES (${placeholders})`,
         values
       );
     }
 
-    res.json({ success: true });
+    const saved = await query(
+      "SELECT * FROM site_settings LIMIT 1"
+    );
+
+    res.json({
+      success: true,
+      settings: saved[0] || {}
+    });
+
   } catch (err) {
+
     console.error("ERRO AO SALVAR CONFIGURAÇÕES:", err);
+
     res.status(500).json({
       error: err.message,
       sqlMessage: err.sqlMessage || null,
@@ -501,6 +166,10 @@ app.post("/api/settings", async (req, res) => {
     });
   }
 });
+
+/* =========================
+START SERVER
+========================= */
 
 app.listen(PORT, () => {
   console.log(`🚀 API rodando na porta ${PORT}`);
