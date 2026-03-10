@@ -14,9 +14,6 @@ const buildInitialForm = (settingsData = {}) => ({
   header_text: settingsData.header_text || 'Os melhores PODs com entrega rápida!',
   logo_url: settingsData.logo_url || '',
 
-  delivery_fee: Number(settingsData.delivery_fee ?? 0),
-  min_order_value: Number(settingsData.min_order_value ?? 0),
-
   opening_time: settingsData.opening_time || '08:00',
   closing_time: settingsData.closing_time || '22:00',
   is_open_override: Number(settingsData.is_open_override ?? 1),
@@ -155,9 +152,6 @@ export default function AdminSettings() {
         whatsapp_number: form.whatsapp_number || '',
         header_text: form.header_text || '',
         logo_url: form.logo_url || '',
-
-        delivery_fee: Number(form.delivery_fee || 0),
-        min_order_value: Number(form.min_order_value || 0),
 
         opening_time: form.opening_time || '08:00',
         closing_time: form.closing_time || '22:00',
@@ -355,34 +349,6 @@ export default function AdminSettings() {
                 </div>
               </Field>
             ))}
-          </div>
-        </Section>
-
-        <Section title="Entrega" icon={Truck}>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Taxa de entrega (R$)">
-              <input
-                type="number"
-                step="0.01"
-                value={form.delivery_fee}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, delivery_fee: parseFloat(e.target.value) || 0 }))
-                }
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="Pedido mínimo (R$)">
-              <input
-                type="number"
-                step="0.01"
-                value={form.min_order_value}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, min_order_value: parseFloat(e.target.value) || 0 }))
-                }
-                className={inputClass}
-              />
-            </Field>
           </div>
         </Section>
 

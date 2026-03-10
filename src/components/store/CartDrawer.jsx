@@ -8,22 +8,23 @@ export default function CartDrawer({ open, onClose, settings }) {
   const { items, updateQuantity, removeItem, subtotal, totalItems } = useCart();
   const navigate = useNavigate();
 
-  const rawDeliveryFee = parseFloat(settings?.delivery_fee || 0);
+  const subtotalValue = Number(subtotal || 0);
+  const rawDeliveryFee = Number(settings?.delivery_fee || 0);
   const freeShippingEnabled = Number(settings?.free_shipping_enabled) === 1;
-  const freeShippingThreshold = parseFloat(settings?.free_shipping_threshold || 0);
+  const freeShippingThreshold = Number(settings?.free_shipping_threshold || 0);
 
   const qualifiesFreeShipping =
     freeShippingEnabled &&
     freeShippingThreshold > 0 &&
-    Number(subtotal || 0) >= freeShippingThreshold;
+    subtotalValue >= freeShippingThreshold;
 
   const deliveryFee = qualifiesFreeShipping ? 0 : rawDeliveryFee;
-  const total = parseFloat(subtotal || 0) + deliveryFee;
+  const total = subtotalValue + deliveryFee;
 
-  const remaining = Math.max(freeShippingThreshold - Number(subtotal || 0), 0);
+  const remaining = Math.max(freeShippingThreshold - subtotalValue, 0);
   const progress =
     freeShippingEnabled && freeShippingThreshold > 0
-      ? Math.min((Number(subtotal || 0) / freeShippingThreshold) * 100, 100)
+      ? Math.min((subtotalValue / freeShippingThreshold) * 100, 100)
       : 0;
 
   const handleCheckout = () => {
@@ -95,7 +96,6 @@ export default function CartDrawer({ open, onClose, settings }) {
                   }}
                 >
                   <p className="text-sm font-semibold mb-2">{freeShippingTitle}</p>
-
                   <p className="text-xs mb-2">{freeShippingMessage}</p>
 
                   <div
@@ -146,7 +146,7 @@ export default function CartDrawer({ open, onClose, settings }) {
                       className="text-sm font-bold mt-1"
                       style={{ color: settings?.product_price_color || '#059669' }}
                     >
-                      R$ {(item.unit_price * item.quantity).toFixed(2).replace('.', ',')}
+                      R$ {(Number(item.unit_price) * Number(item.quantity)).toFixed(2).replace('.', ',')}
                     </p>
 
                     <div className="flex items-center gap-2 mt-2">
@@ -187,7 +187,7 @@ export default function CartDrawer({ open, onClose, settings }) {
           >
             <div className="flex justify-between text-sm text-gray-600">
               <span>Subtotal</span>
-              <span>R$ {parseFloat(subtotal || 0).toFixed(2).replace('.', ',')}</span>
+              <span>R$ {subtotalValue.toFixed(2).replace('.', ',')}</span>
             </div>
 
             <div className="flex justify-between text-sm text-gray-600">
